@@ -1,0 +1,11 @@
+Flask
+Flask-Cors
+Flask-Migrate
+flask-praetorian
+flask-restx
+Flask-SQLAlchemy
+Flask-Script
+python-dotenv
+psycopg2
+pytz
+sqlalchemy

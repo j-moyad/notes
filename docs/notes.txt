@@ -1,0 +1,80 @@
+Technologies to use:
+BackEnd:
+	Server: 	nginx
+	Language:	Python
+	Framework: 	flask
+	DB:			postgres
+	ORM:		sql-alchemy
+	Security:	flask-praetorian
+
+FrontEnd:
+	Language:		JavaScript
+	Framework:		Vue.js
+	Build system:	Nuxt.js
+	CSS Framework:	Bootstrap-vue
+
+
+Entities:
+	User:
+		id:			INTEGER
+		username:	VARCHAR
+		password:	VARCHAR
+		roles:		LONGTEXT
+		is_active:	BOOLEAN
+
+	Note:
+		id:					INTEGER
+		user_id:			INTEGER		REF User (MtO)
+		order:				SMALLINT
+		title:				VARCHAR
+		text:				VARCHAR
+		background_color:	VARCHAR
+		is_pinned:			BOOLEAN
+		created:			timestamptz
+		updated:			timestamptz
+		created_by:			INTEGER		REF User (MtO)
+		updated_by:			INTEGER		REF User (MtO)
+		labels:							REF Label (MtM)
+
+		* The updated column is the time the note was last updated in the server,
+		  and each client is going to keep its own updated value that the server is
+		  going to send it, that way it can know if the note in the server is more
+		  recent and it has to get the changes, or if the client one is more recent,
+		  in this case the client sends the note to the server.
+
+	Label:
+		id:		INTEGER
+		name:	VARCHAR
+
+	NoteHistory:
+		id:					INTEGER
+		note_id:			INTEGER
+		title:				VARCHAR
+		text:				VARCHAR
+		background_color:	VARCHAR
+		revision:			SMALLINT
+		created:			timestamptz
+
+Milestones:
+	1st:
+		CRUD of Users
+		Create simple notes and storing its contents in the localStorage
+		Add markdown to the notes
+		Add the background_color chooser and a button to pin the notes to the top
+		Add draggable functionality and sort the notes by the same order everytime
+		Sync Notes to the server after the edition is finished (the note loses focus)
+		(Whatever change is more recent completely overrides the previous ones)
+
+	2nd:
+		Allow the notes to be categorized with labels
+
+	3rd:
+		Add versioning:
+			Save every step of the edition in localStorage, so that the user can undo/redo the changes
+			Send the changes after the note loses focus to the server, making an entry with the previous
+			text in the NoteHistory entity, up to 10 per note, and adding a way for replacing the last version with a previous one
+
+	4th:
+		Add deltas for the times a note was updated in two or more clients without
+		being synchonized with the server, that way the user can decide which note is the
+		one that is going to be kept, or they can choose to keep both deltas
