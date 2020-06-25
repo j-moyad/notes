@@ -1,3 +1,19 @@
+1. Prerequisites
+    ```
+    python3
+    python3-pip
+    python3-venv
+    python3-psycopg2
+    postgresql
+    libpq-dev
+    python3-dev
+    build-essential
+    ```
+   Remember to enable postgresql with this command
+   ```
+   sudo systemctl enable --now postgresql 
+   ```
+
 1. Create the next folder structure
 
    ```
@@ -32,14 +48,13 @@
 2. Initialize and activate the virtualenv inside the server folder
 
     ```
-    cd server
     python -m venv venv
     . venv/bin/activate
    ```
+
 3. Add the dependencies
 
     ```
-    cd ..
     nano requirements.txt
     ```
 
@@ -58,6 +73,7 @@
     ```
 
     ```
+    pip install wheel
     pip install -r requirements.txt
     ```
 
@@ -371,8 +387,83 @@
     and run_migrations_online() of the file migrations/env.py 
     ```
 
+### Running the app
+
+#### Dev
+1.
+    ```
+    python manage.py run
+    ```
+
+#### Prod
+
+We are going to need gunicorn (a python module to run a http server), nginx and supervisor.
+1.
+    ```
+    pip install gunicorn
+    ```
+
+Create the following files:
+
+##### On arch linux /etc/supervisor.d/flask_app.ini 
+##### On ubuntu /etc/supervisor/conf.d/flask_app.conf
+1.
+    ```
+    [program:flask_app]
+    directory=/srv/http/notes
+    command=/srv/http/notes/venv/bin/gunicorn --workers=3 --bind 127.0.0.1:5000 manage:app
+    autostart=true
+    autorestart=true
+    stopasgroup=true
+    killasgroup=true
+    stderr_logfile=/var/log/flask_app/flask_app.err.log
+    stdout_logfile=/var/log/flask_app/flask_app.out.log
+    ```
+
+##### /etc/nginx/sites-available/flask_app
+1.
+    ```
+    # Backend (API Endpoint) 
+    server {
+        listen 4000;
+        server_name _;
+    
+        location / {
+            proxy_pass http://127.0.0.1:5000;
+            proxy_set_header Host $host;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        }
+    
+        location /swagger.json {
+            return 404;
+        }
+    }
+    
+   # Frontend (SPA)
+    server {
+       listen 80;
+        root /srv/http/accounting/client/dist;
+    
+        location / {
+            try_files $uri $uri/ /index.html;
+        }
+    }
+    ```
+
+Then 
+1.
+    ```
+    sudo ln -s /etc/nginx/sites-available/flask_app /etc/nginx/sites-enabled/flask_app
+    sudo systemctl enable --now nginx
+    sudo systemctl enable --now supervisord
+    sudo supervisorctl start flask_app
+    ```
+
+
 ##### Sources:
-```
-https://www.freecodecamp.org/news/structuring-a-flask-restplus-web-service-for-production-builds-c2ec676de563/
-http://blog.code4hire.com/2017/06/setting-up-alembic-to-detect-the-column-length-change/
-```
+1.
+    ```
+    https://www.freecodecamp.org/news/structuring-a-flask-restplus-web-service-for-production-builds-c2ec676de563/
+    http://blog.code4hire.com/2017/06/setting-up-alembic-to-detect-the-column-length-change/
+    https://www.linode.com/docs/development/python/flask-and-gunicorn-on-ubuntu/
+    ```

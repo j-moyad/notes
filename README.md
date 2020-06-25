@@ -1,1 +1,1 @@
-# notes
+# Template and tutorial to get a Flask app started
